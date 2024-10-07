@@ -77,48 +77,89 @@ def game():
     game_speed = 10
     difficulty_timer = 0
 
+    # Game state variables
+    game_state = "start"  # Can be "start", "running", or "paused"
+
     running = True
     while running:
         clock.tick(FPS)
-        screen.fill(WHITE)
 
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                dino.jump()
 
-        # Update the dinosaur and obstacles
-        dino.update()
-        for obstacle in obstacles:
-            obstacle.update()
+            if event.type == pygame.KEYDOWN:
+                # Handle starting the game from the start screen
+                if game_state == "start":
+                    if event.key == pygame.K_SPACE:
+                        game_state = "running"  # Start the game
 
-            # Check for collision
-            if dino.rect.colliderect(obstacle.rect):
-                print(f"Game Over! Final Score: {score}")
-                running = False
+                # Handle pausing the game
+                if game_state == "running":
+                    if event.key == pygame.K_SPACE:
+                        dino.jump()
+                    if event.key == pygame.K_p:  # Press 'P' to pause
+                        game_state = "paused"
 
-        # Draw everything
-        dino.draw(screen)
-        for obstacle in obstacles:
-            obstacle.draw(screen)
+                # Handle resuming the game from pause
+                elif game_state == "paused":
+                    if event.key == pygame.K_p:  # Press 'P' again to unpause
+                        game_state = "running"
 
-        # Dynamic difficulty adjustment (increase speed over time)
-        difficulty_timer += 1
-        if difficulty_timer % 500 == 0:
-            game_speed += 1
+        # Start Screen
+        if game_state == "start":
+            screen.fill(WHITE)
+            font = pygame.font.Font(None, 48)
+            start_text = font.render("Press SPACE to Start", True, BLACK)
+            screen.blit(start_text, (SCREEN_WIDTH // 2 - start_text.get_width() // 2, SCREEN_HEIGHT // 2))
+
+        # Paused Screen
+        elif game_state == "paused":
+            screen.fill(WHITE)
+            font = pygame.font.Font(None, 48)
+            pause_text = font.render("Paused - Press 'P' to Resume", True, BLACK)
+            screen.blit(pause_text, (SCREEN_WIDTH // 2 - pause_text.get_width() // 2, SCREEN_HEIGHT // 2))
+
+        # Running game state
+        elif game_state == "running":
+            screen.fill(WHITE)
+
+            # Update the dinosaur and obstacles
+            dino.update()
             for obstacle in obstacles:
-                obstacle.speed = game_speed
-            # Add new obstacles over time
-            if len(obstacles) < 3:
-                obstacles.append(Obstacle(game_speed))
+                obstacle.update()
 
-        # Update score
-        score += 1
-        font = pygame.font.Font(None, 36)
-        score_text = font.render(f"Score: {score}", True, BLACK)
-        screen.blit(score_text, (10, 10))
+                # Check for collision
+                if dino.rect.colliderect(obstacle.rect):
+                    print(f"Game Over! Final Score: {score}")
+                    running = False
+
+            # Draw everything
+            dino.draw(screen)
+            for obstacle in obstacles:
+                obstacle.draw(screen)
+
+            # Dynamic difficulty adjustment (increase speed over time)
+            difficulty_timer += 1
+            if difficulty_timer % 500 == 0:
+                game_speed += 1
+                for obstacle in obstacles:
+                    obstacle.speed = game_speed
+                # Add new obstacles over time
+                if len(obstacles) < 3:
+                    obstacles.append(Obstacle(game_speed))
+
+            # Update score
+            score += 1
+            font = pygame.font.Font(None, 36)
+            score_text = font.render(f"Score: {score}", True, BLACK)
+            screen.blit(score_text, (10, 10))
+
+            # Display the "Press P to Pause" message
+            pause_font = pygame.font.Font(None, 24)  # Smaller font for the pause message
+            pause_text = pause_font.render("Press P to Pause", True, BLACK)
+            screen.blit(pause_text, (SCREEN_WIDTH - pause_text.get_width() - 10, 10))  # Top-right corner
 
         # Refresh the display
         pygame.display.flip()
